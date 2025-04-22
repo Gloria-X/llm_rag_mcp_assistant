@@ -15,7 +15,7 @@ export default class MCPClient {
         name: string,
         command: string,
         args: string[],
-        env: Record<string, string>,
+        env?: Record<string, string>,
         version?: string,
     ) {
     //   this.anthropic = new Anthropic({
@@ -24,7 +24,7 @@ export default class MCPClient {
       this.mcp = new Client({ name, version: version || "1.0.0" });
       this.command = command
       this.args = args
-      this.env = env
+      this.env = env || {}
     }
 
     public async close() {
@@ -39,32 +39,37 @@ export default class MCPClient {
         return this.tools;
     }
 
+    public async callTool(name: string, params?: Record<string, any>) {
+        const res = await this.mcp.callTool({
+          arguments: params,
+          name
+         });
+        return res
+    }
+
     // cmd + args
     // https://modelcontextprotocol.io/quickstart/client#node
     private async connectToServer() {
         try {
-        console.log("Starting to connect to server...");
-        //   const isJs = serverScriptPath.endsWith(".js");
-        //   const isPy = serverScriptPath.endsWith(".py");
-        //   if (!isJs && !isPy) {
-        //     throw new Error("Server script must be a .js or .py file");
-        //   }
-        //   const command = isPy
-        //     ? process.platform === "win32"
-        //       ? "python"
-        //       : "python3"
-        //     : process.execPath;
-          
+          console.log("Starting to connect to server...");
+          //   const isJs = serverScriptPath.endsWith(".js");
+          //   const isPy = serverScriptPath.endsWith(".py");
+          //   if (!isJs && !isPy) {
+          //     throw new Error("Server script must be a .js or .py file");
+          //   }
+          //   const command = isPy
+          //     ? process.platform === "win32"
+          //       ? "python"
+          //       : "python3"
+          //     : process.execPath;
+            
           this.transport = new StdioClientTransport({
             command: this.command,
             args: this.args,
             env: this.env,
           });
         
-            console.log("Transport created. Connecting...");
-            await this.mcp.connect(this.transport);
-            // this.mcp.connect(this.transport);
-            console.log("Connected to server. Listing tools...");
+          await this.mcp.connect(this.transport);
           
           const toolsResult = await this.mcp.listTools();
           this.tools = toolsResult.tools.map((tool) => {

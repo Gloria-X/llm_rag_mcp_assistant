@@ -1,4 +1,4 @@
-import { PostgresDB } from '../Postgre';
+import { PostgresDB } from '../Postgres';
 import { Document } from './types';
 
 export class DocumentDB extends PostgresDB<Document> {

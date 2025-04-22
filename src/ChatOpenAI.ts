@@ -19,7 +19,12 @@ export default class ChatOpenAI {
     private readonly model: string
     private readonly messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
     private readonly tools: Tool[] = []
-    constructor(model: string, systemPrompt: string = '', tools: Tool[] = [], context: string = '') {
+    constructor(
+        model: string, 
+        systemPrompt: string = '', 
+        tools: Tool[] = [], 
+        context: string = ''
+    ) {
         this.model = model
         this.tools = tools
         if (systemPrompt) {
@@ -107,7 +112,11 @@ export default class ChatOpenAI {
         // https://platform.openai.com/docs/api-reference/chat
         return this.tools.map(tool => ({
             type: 'function' as const, 
-            function: tool
+            function: {
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.inputSchema
+            }
         }))
     }
 }
