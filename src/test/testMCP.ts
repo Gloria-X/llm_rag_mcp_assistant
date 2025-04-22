@@ -8,8 +8,8 @@ const mcpServers = {
             "@modelcontextprotocol/server-gitlab"
         ],
         "env": {
-            "GITLAB_PERSONAL_ACCESS_TOKEN": process.env.GITLAB_PERSONAL_ACCESS_TOKEN || '',
-            "GITLAB_API_URL": process.env.GITLAB_API_URL || ''
+            "GITLAB_PERSONAL_ACCESS_TOKEN": process.env.GITLAB_PERSONAL_ACCESS_TOKEN!,
+            "GITLAB_API_URL": process.env.GITLAB_API_URL!
         }
     }
 };

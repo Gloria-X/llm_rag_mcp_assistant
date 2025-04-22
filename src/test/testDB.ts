@@ -1,7 +1,7 @@
 import { createDBs } from '../models';
 // TRUNCATE TABLE document, document_segments, embeddings RESTART IDENTITY;
 
-async function example() {
+async function testDB() {
   const { documentDB, documentSegmentDB, embeddingDB } = createDBs();
 
   try {
@@ -25,4 +25,4 @@ async function example() {
   }
 }
 
-export { example } 
+export { testDB } 
