@@ -26,8 +26,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.1",
+    "@types/pg": "^8.11.13",
     "chalk": "^5.4.1",
     "dotenv": "^16.5.0",
-    "openai": "^4.95.1"
+    "openai": "^4.95.1",
+    "pg": "^8.14.1"
   }
 }
