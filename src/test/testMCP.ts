@@ -24,8 +24,11 @@ const gitlabClient = new MCPClient(
 async function testMCP() {
     const mcpClient = gitlabClient
     await mcpClient.init()
-    const tools = mcpClient.getTools()
-    console.log(tools)
+    // const tools = mcpClient.getTools()
+    
+
+    const res = await mcpClient.callTool("get_file_info", { path : 'C:\\code\\xsy\\llm_rag_mcp_assistant\\src\\MCPClient.ts'})
+    console.log(res)
     await mcpClient.close()
 }
 
