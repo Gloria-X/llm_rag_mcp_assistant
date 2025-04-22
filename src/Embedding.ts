@@ -26,6 +26,7 @@ export class Embedder {
     this.model = model;
   }
 
+  // https://docs.siliconflow.cn/cn/api-reference/embeddings/create-embeddings
   async createEmbedding(text: string): Promise<number[]> {
     const options: RequestInit = {
       method: 'POST',
