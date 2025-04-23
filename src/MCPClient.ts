@@ -51,7 +51,6 @@ export default class MCPClient {
     // https://modelcontextprotocol.io/quickstart/client#node
     private async connectToServer() {
         try {
-          console.log("Starting to connect to server...");
           //   const isJs = serverScriptPath.endsWith(".js");
           //   const isPy = serverScriptPath.endsWith(".py");
           //   if (!isJs && !isPy) {
@@ -79,10 +78,10 @@ export default class MCPClient {
               inputSchema: tool.inputSchema,
             };
           });
-          console.log(
-            "Connected to server with tools:",
-            this.tools.map(({ name }) => name)
-          );
+          // console.log(
+          //   "Connected to server with tools:",
+          //   this.tools.map(({ name }) => name)
+          // );
         } catch (e) {
           console.log("Failed to connect to MCP server: ", e);
           throw e;

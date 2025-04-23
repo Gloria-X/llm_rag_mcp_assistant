@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import { log } from './utils';
+import path from 'path';
 
 interface SplitResult {
   content: string;
@@ -9,30 +10,36 @@ interface SplitResult {
 export class TextSplitter {
   private readonly maxTokens: number;
   private readonly minTokens: number;
-  private readonly overlap: number;
-  private readonly avgCharsPerToken: number = 3;
 
-  constructor(maxTokens = 256, minTokens = 50, overlap = 20) {
+  constructor(
+    maxTokens = 256, 
+    minTokens = 50,
+  ) {
     this.maxTokens = maxTokens;
     this.minTokens = minTokens;
-    this.overlap = overlap;
   }
 
-  // 读取文件内容
   private async readFile(filePath: string): Promise<string> {
     try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      return content;
+      const extension = path.extname(filePath).toLowerCase();
+      switch (extension) {
+          case '.txt':
+          case '.md':
+              return await fs.readFile(filePath, 'utf-8');
+          default:
+              throw new Error(`不支持的文件类型: ${extension}`);
+      }
     } catch (error) {
       console.error('读取文件失败:', error);
       throw error;
     }
   }
 
-  // 计算文本字数
+  /**
+   * 中文: 每个字符计为一个词
+   * 英文: 按空格分割计数
+   */
   private countWords(text: string): number {
-    // 对于中文，每个字符计为一个词
-    // 对于英文，按空格分割计数
     const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
     const englishWords = text.replace(/[\u4e00-\u9fa5]/g, '')
       .trim()
@@ -42,20 +49,22 @@ export class TextSplitter {
     return chineseCount + englishWords;
   }
 
-  // 按句子分割文本
+  // 匹配符号按句子 split
   private splitIntoSentences(text: string): string[] {
-    // 匹配中文句号、英文句号、感叹号、问号等作为句子分隔符
     const sentenceDelimiters = /(?<=[。.!?！？])\s*/g;
     return text.split(sentenceDelimiters).filter(s => s.trim().length > 0);
   }
 
-  // 估算文本的token数量
+    /**
+   * 简单估算文本的token数量
+   * 1. 中文字符算1个token
+   * 2. 英文单词算1个token
+   * 3. 标点符号和空格也计入
+   */
   private estimateTokenCount(text: string): number {
-    // 简单估算：
-    // 1. 中文字符算1个token
-    // 2. 英文单词算1个token
-    // 3. 标点符号和空格也计入
+    // 筛选常用汉字 unicode
     const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+    // 移除中文字符和空白字符
     const englishWords = text.replace(/[\u4e00-\u9fa5]/g, '')
       .trim()
       .split(/\s+/)
@@ -90,7 +99,6 @@ export class TextSplitter {
         currentTokenCount += sentenceTokenCount;
       }
 
-      // 如果当前块token数太小，继续添加
       if (currentTokenCount < this.minTokens) {
         continue;
       }
@@ -109,11 +117,8 @@ export class TextSplitter {
 
   public async splitFile(filePath: string): Promise<SplitResult[]> {
     try {
-      // 读取文件
       const content = await this.readFile(filePath);
-      // 按句子分割
       const sentences = this.splitIntoSentences(content);
-      // 合并句子成块
       const chunks = this.mergeSentences(sentences);
       log('SPLIT FILE SUCCESS')
       return chunks;

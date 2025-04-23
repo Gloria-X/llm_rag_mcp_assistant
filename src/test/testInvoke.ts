@@ -38,10 +38,13 @@ const fileMCP = new MCPClient(
 
 
 async function testInvoke() {
-    const agent = new Agent('YU-AI', [gitlabMCP, fileMCP])
+    // const systemPrompt = ''
+    // const context = ''
+    // const agent = new Agent('YU-AI', [gitlabMCP, fileMCP])
+    const agent = new Agent('YU-AI', [fileMCP])
     await agent.init();
     // const res = await agent.invoke(`在我的 gitlab 中 xsy-pro 的 namespace 下新建一个叫 mcp-test 的项目，并创建一个叫 test.txt 的文件，内容为 "hello world" `);
-    const res = await agent.invoke(`概括一下 ${currentDir}/ComputerOrganization.md 文件的内容`);
+    const res = await agent.invoke(`让我快速理解操作系统、操作模式、RAG，将结果写在 ${currentDir}/softwareProcessModel.txt 文件中，结果小于 200 字`, 10);
 
     console.log(res);
 }

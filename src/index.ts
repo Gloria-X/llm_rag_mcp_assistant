@@ -10,12 +10,26 @@ import { testDocumentProcessor } from "./test/testDocumentProcessor";
 
 
 async function main() {
+    const args = process.argv.slice(2);
+    const func = args[0];
+
+    switch (func) {
+        case 'testInvoke':
+            await testInvoke();
+            break;
+        case 'testDocumentProcessor':
+            await testDocumentProcessor();
+            break;
+        default:
+            console.log('input err');
+            break;
+    }
+    
     // await testChatOpenAI()
     // await testMCP()
     // await testInvoke()
     // await testDB()
-    await testDocumentProcessor()
-
+    // await testDocumentProcessor()
 }
 
 main()

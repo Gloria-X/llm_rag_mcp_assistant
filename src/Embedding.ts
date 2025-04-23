@@ -1,8 +1,4 @@
-interface EmbeddingOptions {
-  model: string;
-  input: string;
-  encoding_format: string;
-}
+import { log } from './utils'
 
 interface EmbeddingResponse {
   object: string;
@@ -20,15 +16,13 @@ interface EmbeddingResponse {
 export class Embedder {
   private readonly apiUrl: string = process.env.EMBEDDING_BASE_URL!;
   private readonly token: string = process.env.EMBEDDING_KEY!;
-  private readonly model: string;
+  private readonly model: string = process.env.EMBEDDING_MODEL!;
 
-  constructor(model: string = 'BAAI/bge-large-zh-v1.5') {
-    this.model = model;
-  }
+  constructor() {}
 
   // https://docs.siliconflow.cn/cn/api-reference/embeddings/create-embeddings
   async createEmbedding(text: string): Promise<number[]> {
-    const options: RequestInit = {
+    const options = {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.token}`,
@@ -44,7 +38,7 @@ export class Embedder {
     try {
       const response = await fetch(this.apiUrl, options);
       if (!response.ok) {
-        throw new Error(`API request err: ${response.statusText}`);
+        throw new Error(`createEmbedding - API request err: ${response.statusText}`);
       }
 
       const result: EmbeddingResponse = await response.json();
@@ -80,6 +74,7 @@ export class Embedder {
         segments.map(segment => segment.content)
       );
 
+      log('EMBEDDING SUCCESS')
       return segments.map((segment, index) => ({
         ...segment,
         embedding: embeddings[index]
