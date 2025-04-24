@@ -1,4 +1,5 @@
 import { log } from './utils'
+import { RankSegment } from './types'
 
 interface RerankResponse {
     id: string;
@@ -21,7 +22,7 @@ export class Reranker {
     private readonly model: string = process.env.RERANK_MODEL!;
 
     constructor() {}
-    async rerank(query: string, segments: { content: string; documentId: number }[], topK: number): Promise<{ content: string; documentId: number }[]> {
+    async rerank(query: string, segments: RankSegment[], topK: number): Promise<RankSegment[]> {
         const documents = segments.map(s => s.content);
         
         // https://docs.siliconflow.cn/cn/api-reference/rerank/create-rerank
@@ -55,6 +56,7 @@ export class Reranker {
                 .sort((a, b) => b.relevance_score - a.relevance_score)
                 .map(result => ({
                     content: segments[result.index].content,
+                    segmentId: segments[result.index].segmentId,
                     documentId: segments[result.index].documentId
                 }))
                 .slice(0, topK);

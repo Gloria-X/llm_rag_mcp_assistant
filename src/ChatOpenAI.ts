@@ -89,8 +89,8 @@ export default class ChatOpenAI {
                     }
                 }
             }
-
         }
+
         this.messages.push ({
             role: "assistant", 
             content,

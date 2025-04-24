@@ -2,8 +2,9 @@ import ChatOpenAI from "./ChatOpenAI";
 import MCPClient from "./MCPClient";
 import { log } from "./utils";
 import { Embedder } from "./Embedding";
-import { createDBs } from "./models";
+import { createDBs } from "./models/index";
 import { Reranker } from "./Rerank";
+import { RankSegment, Similarity } from "./types";
 
 export default class Agent {
     private mcpClients: MCPClient[];
@@ -51,8 +52,7 @@ export default class Agent {
     }
     
     private async findSimilarSegments(query: string, topK: number = 3): Promise<{
-        segments: { content: string; documentId: number }[];
-        documentIds: number[];
+        ragSegments: RankSegment[];
     }> {
         try {
             // embedding query
@@ -62,10 +62,7 @@ export default class Agent {
             const allEmbeddings = await this.dbs.embeddingDB.findAll();
 
             // sort
-            const similarities = [] as {
-                similarity: number;
-                segmentId: number;
-            }[]
+            const similarities = [] as Similarity[]
             for (const emb of allEmbeddings) {
                 const similarity = this.cosSimilarity(queryEmbedding, JSON.parse(emb.embedding))
                 const similarityRes = {
@@ -77,7 +74,7 @@ export default class Agent {
             similarities.sort((a, b) => b.similarity - a.similarity);
 
             // top_k
-            let topSegments: { content: string; documentId: number }[] = [];
+            let topSegments: RankSegment[] = []
             const topKSimilarities = similarities.slice(0, topK);
             for (const sim of topKSimilarities) {
                 const segment = await this.dbs.documentSegmentDB.findById(sim.segmentId)
@@ -87,6 +84,7 @@ export default class Agent {
 
                     topSegments.push({
                         content: segment.content,
+                        segmentId: segment.id!,
                         documentId: segment.document_id
                     });
                 }
@@ -94,11 +92,8 @@ export default class Agent {
 
             log('FIND SIMILAR SEGMENTS')
 
-            const documentIds = [...new Set(topSegments.map(s => s.documentId))];
-
             return {
-                segments: topSegments,
-                documentIds
+                ragSegments: topSegments,
             };
         } catch (error) {
             console.error('findSimilarSegments err:', error);
@@ -106,25 +101,53 @@ export default class Agent {
         }
     }
 
-    async invoke(prompt: string, topk: number = 3) {
+    async invoke(prompt: string, topk: number = 3, summarize: boolean = false) {
         if (!this.llm) throw new Error('LLM not initialized');
     
-        // RAG
-        const { segments, documentIds } = await this.findSimilarSegments(prompt, topk * 2);
-    
-        // Rerank
-        const reranker = new Reranker();
-        const rerankedSegments = await reranker.rerank(prompt, segments, topk);
-
-        const context = rerankedSegments.map(s => s.content).join('\n\n');
-        const enhancedPrompt = `context: \n${context}\n\nuser prompt: ${prompt}`;
-
-        log('GENERATE CONTEXT SUCCESS')
-
-        let response = await this.llm.chat(enhancedPrompt);
+        let response;
+        let segments: RankSegment[] = []
         
+        if (!summarize) {
+            // RAG
+            const { ragSegments } = await this.findSimilarSegments(prompt, topk * 2);
+        
+            // Rerank
+            const reranker = new Reranker();
+            const rerankedSegments = await reranker.rerank(prompt, ragSegments, topk);
+        
+            // 为每个段落添加标识符
+            segments = rerankedSegments.map((segment, index) => ({
+                segmentIndex: `[${index + 1}]`,
+                ...segment,
+            }));
+        
+            const context = segments
+                .map(s => `${s.segmentIndex}: ${s.content}`)
+                .join('\n\n');
+        
+            const enhancedPrompt = `
+    context:
+    ${context}
+    
+    prompt: ${prompt}
+    
+    请务必按照以下要求回答问题：
+    1. 对于回答中的每一个关键信息，都必须标注来源，使用方括号标记，例如：[1]、[2]等
+    2. 引用格式示例："通过[1]可知..."
+    3. 确保每个重要陈述都有对应的引用标记
+    4. 如果某个信息来自多个段落，可以同时引用多个来源，例如：[1][2]
+    
+    请基于以上要求回答问题。
+    `;
+        
+            log('GENERATE CONTEXT SUCCESS')
+            prompt = enhancedPrompt;
+        }
+
+        response = await this.llm.chat(prompt);
+    
+        // 处理工具调用
         while (true) {
-            // tools
             if (response.toolCalls.length > 0) {
                 for (const toolCall of response.toolCalls) {
                     const mcp = this.mcpClients.find(mcp => mcp.getTools().find(t => t.name === toolCall.function.name));
@@ -134,20 +157,20 @@ export default class Agent {
                         log(`TOOL USE - ${toolCall.function.name}`)
                         console.log(`calling toll: ${toolCall.function.name} with ${toolCall.function.arguments}`)
                         const result = await mcp.callTool(toolCall.function.name, JSON.parse(toolCall.function.arguments));
-                        // console.log(`TOOL RESULT - ${JSON.stringify(result)}`)
                         this.llm.appendToolResult(toolCall.id, JSON.stringify(result));
                     }
                 }
                 response = await this.llm.chat();
                 continue;
             }
-            break
+            break;
         }
         await this.close();
 
+
         return {
             content: response.content,
-            documentIds
+            ...(segments.length > 0 && { segments })
         };
     }
 }

@@ -1,6 +1,6 @@
 import { TextSplitter } from './Split';
 import { Embedder } from './Embedding';
-import { createDBs } from './models';
+import { createDBs } from './models/index';
 import { log } from './utils';
 
 export class DocumentProcessor {

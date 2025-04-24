@@ -44,7 +44,7 @@ async function testInvoke() {
     const agent = new Agent('YU-AI', [fileMCP])
     await agent.init();
     // const res = await agent.invoke(`在我的 gitlab 中 xsy-pro 的 namespace 下新建一个叫 mcp-test 的项目，并创建一个叫 test.txt 的文件，内容为 "hello world" `);
-    const res = await agent.invoke(`让我快速理解操作系统、操作模式、RAG，将结果写在 ${currentDir}/softwareProcessModel.txt 文件中，结果小于 200 字`, 10);
+    const res = await agent.invoke(`袭人是谁，和她有关的还有哪些人，他们的关系是什么，分段罗列，将结果写在 ${currentDir}/hongloumeng.txt 文件中`, 10);
 
     console.log(res);
 }

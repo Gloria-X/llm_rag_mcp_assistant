@@ -6,7 +6,9 @@ import { testMCP } from "./test/testMCP";
 import { testInvoke } from "./test/testInvoke";
 import { testDB } from "./test/testDB";
 import { testDocumentProcessor } from "./test/testDocumentProcessor";
-
+import { testSummary } from "./test/testSummary";
+import { createDBs } from './models/index';
+import { initializeDB } from './models'
 
 
 async function main() {
@@ -19,6 +21,9 @@ async function main() {
             break;
         case 'testDocumentProcessor':
             await testDocumentProcessor();
+            break;
+        case 'testSummary':
+            await testSummary();
             break;
         default:
             console.log('input err');
