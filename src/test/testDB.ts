@@ -1,4 +1,4 @@
-import { createDBs } from '../models';
+import { createDBs } from '../models/index';
 // TRUNCATE TABLE document, document_segments, embeddings RESTART IDENTITY;
 
 async function testDB() {
