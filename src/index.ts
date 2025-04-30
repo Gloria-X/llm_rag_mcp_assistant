@@ -7,8 +7,6 @@ import { testInvoke } from "./test/testInvoke";
 import { testDB } from "./test/testDB";
 import { testDocumentProcessor } from "./test/testDocumentProcessor";
 import { testSummary } from "./test/testSummary";
-import { createDBs } from './models/index';
-import { initializeDB } from './models'
 
 
 async function main() {

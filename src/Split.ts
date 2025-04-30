@@ -1,6 +1,6 @@
-import * as fs from 'fs/promises';
-import { log } from './utils';
-import path from 'path';
+import * as fs from "fs/promises";
+import { log } from "./utils";
+import path from "path";
 
 interface SplitResult {
   content: string;
@@ -11,10 +11,7 @@ export class TextSplitter {
   private readonly maxTokens: number;
   private readonly minTokens: number;
 
-  constructor(
-    maxTokens = 256, 
-    minTokens = 50,
-  ) {
+  constructor(maxTokens = 256, minTokens = 50) {
     this.maxTokens = maxTokens;
     this.minTokens = minTokens;
   }
@@ -23,14 +20,14 @@ export class TextSplitter {
     try {
       const extension = path.extname(filePath).toLowerCase();
       switch (extension) {
-          case '.txt':
-          case '.md':
-              return await fs.readFile(filePath, 'utf-8');
-          default:
-              throw new Error(`不支持的文件类型: ${extension}`);
+        case ".txt":
+        case ".md":
+          return await fs.readFile(filePath, "utf-8");
+        default:
+          throw new Error(`不支持的文件类型: ${extension}`);
       }
     } catch (error) {
-      console.error('读取文件失败:', error);
+      console.error("读取文件失败:", error);
       throw error;
     }
   }
@@ -41,21 +38,22 @@ export class TextSplitter {
    */
   private countWords(text: string): number {
     const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-    const englishWords = text.replace(/[\u4e00-\u9fa5]/g, '')
+    const englishWords = text
+      .replace(/[\u4e00-\u9fa5]/g, "")
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0).length;
-    
+      .filter((word) => word.length > 0).length;
+
     return chineseCount + englishWords;
   }
 
   // 匹配符号按句子 split
   private splitIntoSentences(text: string): string[] {
     const sentenceDelimiters = /(?<=[。.!?！？])\s*/g;
-    return text.split(sentenceDelimiters).filter(s => s.trim().length > 0);
+    return text.split(sentenceDelimiters).filter((s) => s.trim().length > 0);
   }
 
-    /**
+  /**
    * 简单估算文本的token数量
    * 1. 中文字符算1个token
    * 2. 英文单词算1个token
@@ -65,32 +63,39 @@ export class TextSplitter {
     // 筛选常用汉字 unicode
     const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
     // 移除中文字符和空白字符
-    const englishWords = text.replace(/[\u4e00-\u9fa5]/g, '')
+    const englishWords = text
+      .replace(/[\u4e00-\u9fa5]/g, "")
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0).length;
-    
+      .filter((word) => word.length > 0).length;
+
     return chineseCount + englishWords;
   }
 
   // 合并短句子
   private mergeSentences(sentences: string[]): SplitResult[] {
     const chunks: SplitResult[] = [];
-    let currentChunk = '';
+    let currentChunk = "";
     let currentTokenCount = 0;
 
     for (const sentence of sentences) {
       const sentenceTokenCount = this.estimateTokenCount(sentence);
-      
-      if (currentTokenCount + sentenceTokenCount > this.maxTokens && currentChunk) {
+
+      if (
+        currentTokenCount + sentenceTokenCount > this.maxTokens &&
+        currentChunk
+      ) {
         // 如果当前块加上新句子超过最大token数，保存当前块
         chunks.push({
           content: currentChunk.trim(),
-          wordCount: this.countWords(currentChunk)
+          wordCount: this.countWords(currentChunk),
         });
-        
+
         // 保留一部分重叠内容
-        const lastSentences = currentChunk.split(/[。.!?！？]/g).slice(-2).join('。');
+        const lastSentences = currentChunk
+          .split(/[。.!?！？]/g)
+          .slice(-2)
+          .join("。");
         currentChunk = lastSentences + sentence;
         currentTokenCount = this.estimateTokenCount(currentChunk);
       } else {
@@ -108,7 +113,7 @@ export class TextSplitter {
     if (currentChunk) {
       chunks.push({
         content: currentChunk.trim(),
-        wordCount: this.countWords(currentChunk)
+        wordCount: this.countWords(currentChunk),
       });
     }
 
@@ -120,10 +125,10 @@ export class TextSplitter {
       const content = await this.readFile(filePath);
       const sentences = this.splitIntoSentences(content);
       const chunks = this.mergeSentences(sentences);
-      log('SPLIT FILE SUCCESS')
+      log("SPLIT FILE SUCCESS");
       return chunks;
     } catch (error) {
-      console.error('splitFile err:', error);
+      console.error("splitFile err:", error);
       throw error;
     }
   }
